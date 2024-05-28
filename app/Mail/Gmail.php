@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -11,12 +10,14 @@ class Gmail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $data;
+
     /**
      * Create a new message instance.
      *
+     * @param string $data
      * @return void
      */
-    public $data;
     public function __construct($data)
     {
         $this->data = $data;
@@ -29,8 +30,8 @@ class Gmail extends Mailable
      */
     public function build()
     {
-        return $this->view('gmail',[
-            'code' => $this->data 
-        ])->subject('Eaalim Offers');
+        return $this->view('gmail')
+                    ->with(['code' => $this->data])
+                    ->subject('Eaalim Offers');
     }
 }

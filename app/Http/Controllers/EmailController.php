@@ -10,6 +10,10 @@ use App\Jobs\SendEmailsJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+
+
 
 
 class EmailController extends Controller
@@ -17,38 +21,40 @@ class EmailController extends Controller
 
     public function sendEmailAutomatic(Request $request)
     {
-        $tem_ID = $request->tempi;
-        $template = Template::select('code')->where('id',$tem_ID)->get();
-        $code = $template[0]->code;
-        
-        $emails = email::where('send','0')->get();
-        
-        if ($emails->count() >=1 ) {    
-            foreach ($emails as $value) {
+        $tem_ID = $request->input('tempi');
+        $template = Template::find($tem_ID);
+
+        if (!$template) {
+            return response()->json([
+                "status" => '0',
+                "msg" => 'Template not found'
+            ]);
+        }
+
+        $code = $template->code;
+        $emails = Email::where('send', '0')->get();
+
+        if ($emails->count() > 0) {
+            foreach ($emails as $email) {
                 try {
-                    dispatch(new SendEmailsJob($code));
-                    sleep(1);
+                    dispatch(new SendEmailsJob($email, $code));
                 } catch (ModelNotFoundException $exception) {
                     return back()->withError($exception->getMessage())->withInput();
-                
-                    exit;
                 }
-                
             }
 
             return response()->json([
-                "status"    => '1',
-                "msg"       => 'Send all emails successfully'
+                "status" => '1',
+                "msg" => 'All emails are being sent'
             ]);
         } else {
-          return response()->json([
-                "status"    => '0',
-                "msg"       => 'No emails found please add some files'
-            ]);  
+            return response()->json([
+                "status" => '0',
+                "msg" => 'No emails found, please add some emails'
+            ]);
         }
-        
-       
     }
+
 
     public function getEmailsNumber()
     {
